@@ -1,0 +1,31 @@
+[package]
+name = "k8sfg"
+version = "0.1.0"
+authors = ["Bryant Biggs <bryantbiggs@gmail.com>"]
+description = "A CLI to display feature gates across Kubernetes versions"
+documentation = "https://github.com/clowdhaus/k8s-feature-gates"
+homepage = "https://github.com/clowdhaus/k8s-feature-gates"
+repository = "https://github.com/clowdhaus/k8s-feature-gates"
+license = "Apache-2.0"
+edition = "2021"
+categories = [
+  "command-line-utilities",
+]
+
+[dependencies]
+anstyle = "1.0"
+anyhow = "1.0"
+clap = { version = "4.2", features = ["derive", "color"] }
+clap-verbosity-flag = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tracing = { version = "0.1", default-features = false, features = ["log-always"] }
+tracing-log = "0.2"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "ansi"] }
+
+[profile.release]
+strip = true
+lto = true
+opt-level = "z"
+codegen-units = 1
+panic = "abort"
