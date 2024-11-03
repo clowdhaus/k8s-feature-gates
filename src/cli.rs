@@ -45,9 +45,16 @@ impl Cli {
     Ok(())
   }
 
-  pub fn write(self) -> Result<()> {
-    // let data = self.collect()?;
-    // fs::write(Path::new(&self.path), data).map_err(Into::into)
+  pub async fn write(self) -> Result<()> {
+    let client = reqwest::Client::builder()
+      .user_agent("k8sfg")
+      .redirect(reqwest::redirect::Policy::limited(5))
+      .build()?;
+
+    let bin = crate::download_binary(client, "v1.31.0", "kubelet").await?;
+
+    println!("{:?}", bin);
+
     Ok(())
   }
 }

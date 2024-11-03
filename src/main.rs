@@ -4,7 +4,8 @@ use k8sfg::Cli;
 use tracing_log::AsTrace;
 use tracing_subscriber::FmtSubscriber;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
   let cli = Cli::parse();
   let subscriber = FmtSubscriber::builder()
     .with_max_level(cli.verbose.log_level_filter().as_trace())
@@ -12,5 +13,5 @@ fn main() -> Result<()> {
     .finish();
   tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
-  cli.write()
+  cli.write().await.map_err(Into::into)
 }
