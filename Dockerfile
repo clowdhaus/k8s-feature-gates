@@ -1,4 +1,7 @@
-FROM --platform=linux/amd64 rust:bookworm AS base
+ARG RUST_VERSION=1.82
+ARG OS_VERSION=bookworm
+
+FROM --platform=linux/amd64 rust:${RUST_VERSION}-${OS_VERSION} AS base
 RUN cargo install sccache cargo-chef
 ENV RUSTC_WRAPPER=sccache SCCACHE_DIR=/sccache
 
@@ -27,10 +30,12 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 
 # ----------------------------------------------------------------------------
 
-FROM --platform=linux/amd64 debian:bookworm-slim
+FROM --platform=linux/amd64 debian:${OS_VERSION}-slim
 COPY --from=builder --chown=nonroot:nonroot /app/target/release/k8sfg /k8sfg
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
-CMD ["./k8sfg"]
+CMD ["/k8sfg"]

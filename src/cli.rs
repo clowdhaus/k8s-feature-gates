@@ -51,9 +51,9 @@ impl Cli {
       .redirect(reqwest::redirect::Policy::limited(5))
       .build()?;
 
-    let bin = crate::download_binary(client, "v1.31.0", "kubelet").await?;
-
-    println!("{:?}", bin);
+    // let bin = crate::download_binary(client, "v1.31.0", "kubelet").await?;
+    // println!("{:?}", bin);
+    crate::collect_feature_gates(client).await?;
 
     Ok(())
   }
