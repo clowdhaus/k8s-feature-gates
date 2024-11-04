@@ -12,7 +12,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     outputs:
-      cookiecluster_version: ${{ env.COOKIECLUSTER_VERSION }}
+      k8sfg_version: ${{ env.K8SFG_VERSION }}
       release_body: ${{ steps.git-cliff.outputs.content }}
     steps:
       - name: Checkout
@@ -22,10 +22,10 @@ jobs:
 
       - name: Get the release version from the tag
         shell: bash
-        if: env.COOKIECLUSTER_VERSION == ''
+        if: env.K8SFG_VERSION == ''
         run: |
-          echo "COOKIECLUSTER_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "version is: ${{ env.COOKIECLUSTER_VERSION }}"
+          echo "K8SFG_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "version is: ${{ env.K8SFG_VERSION }}"
 
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v3
@@ -54,14 +54,14 @@ jobs:
       RUST_BACKTRACE: 1
     strategy:
       matrix:
-        build: [linux, linux-arm, macos, macos-arm, win-msvc, win32-msvc] # win-gnu,
+        build: [linux, linux-arm, macos, macos-arm]
         include:
         - build: linux
-          os: ubuntu-22.04
+          os: ubuntu-24.04
           rust: nightly
           target: x86_64-unknown-linux-musl
         - build: linux-arm
-          os: ubuntu-22.04
+          os: ubuntu-24.04
           rust: nightly
           target: arm-unknown-linux-gnueabihf
         - build: macos
@@ -72,19 +72,6 @@ jobs:
           os: macos-14
           rust: nightly
           target: aarch64-apple-darwin
-        - build: win-msvc
-          os: windows-2022
-          rust: nightly
-          target: x86_64-pc-windows-msvc
-        # # https://github.com/actions/runner-images/issues/1143
-        # - build: win-gnu
-        #   os: windows-2022
-        #   rust: nightly-x86_64-gnu
-        #   target: x86_64-pc-windows-gnu
-        - build: win32-msvc
-          os: windows-2022
-          rust: nightly
-          target: i686-pc-windows-msvc
 
     steps:
     - name: Checkout repository
@@ -111,22 +98,22 @@ jobs:
         echo "target dir is: ${{ env.TARGET_DIR }}"
 
     - name: Build release binary
-      run: ${{ env.CARGO }} build --package cookiecluster --verbose --release ${{ env.TARGET_FLAGS }}
+      run: ${{ env.CARGO }} build --package k8sfg --verbose --release ${{ env.TARGET_FLAGS }}
 
     - name: Build archive
       shell: bash
       run: |
-        STAGING="cookiecluster-${{ needs.changelog.outputs.cookiecluster_version }}-${{ matrix.target }}"
+        STAGING="k8sfg-${{ needs.changelog.outputs.k8sfg_version }}-${{ matrix.target }}"
         mkdir -p "${STAGING}"
 
         cp {README.md,LICENSE} "${STAGING}/"
 
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          cp "target/${{ matrix.target }}/release/cookiecluster.exe" "${STAGING}/"
+          cp "target/${{ matrix.target }}/release/k8sfg.exe" "${STAGING}/"
           7z a "${STAGING}.zip" "${STAGING}"
           echo "ASSET=${STAGING}.zip" >> $GITHUB_ENV
         else
-          cp "target/${{ matrix.target }}/release/cookiecluster" "${STAGING}/"
+          cp "target/${{ matrix.target }}/release/k8sfg" "${STAGING}/"
           tar czf "${STAGING}.tar.gz" "${STAGING}"
           echo "ASSET=${STAGING}.tar.gz" >> $GITHUB_ENV
         fi

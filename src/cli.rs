@@ -24,15 +24,13 @@ fn get_styles() -> Styles {
     .placeholder(Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Magenta))))
 }
 
-/// k8sfg - A CLI to display feature gates across Kubernetes versions.
-///
-/// ToDo
+/// k8sfg - A CLI to discover the feature gates across Kubernetes versions.
 #[derive(Debug, Parser)]
 #[command(author, about, version)]
 #[command(propagate_version = true)]
 #[command(styles=get_styles())]
 pub struct Cli {
-  /// The path to write the collected results to
+  /// The path where the collected results are written
   #[clap(short, long, default_value = "RESULTS.md")]
   pub path: PathBuf,
 
@@ -43,8 +41,8 @@ pub struct Cli {
 impl Cli {
   pub async fn write(self, client: reqwest::Client) -> Result<()> {
     let mut table = self.collect(client).await?;
-    table.with(tabled::settings::Style::markdown());
 
+    table.with(tabled::settings::Style::markdown());
     tokio::fs::write(self.path, table.to_string()).await?;
 
     Ok(())

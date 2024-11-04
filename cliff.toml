@@ -3,7 +3,7 @@
 
 [remote.github]
 owner = "clowdhaus"
-repo = "cookiecluster"
+repo = "k8sfg"
 
 [changelog]
 header = """

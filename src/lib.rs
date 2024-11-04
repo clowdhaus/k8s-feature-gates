@@ -6,11 +6,16 @@ use anyhow::{bail, Result};
 pub use cli::Cli;
 use once_cell::sync::Lazy;
 use regex_lite::Regex;
-use tabled::{builder::Builder, Table};
+use tabled::{
+  builder::Builder,
+  settings::{object::Columns, Width},
+  Table,
+};
 use tempfile::{tempdir, TempDir};
 use tokio::io::AsyncWriteExt;
 use tracing::info;
 
+static MAX_COLUMN_WIDTH: usize = 40;
 static K8S_MINOR_VERSIONS: &[i32] = &[27, 28, 29, 30, 31];
 static K8S_BINARIES: &[&str] = &[
   "kube-apiserver",
@@ -51,6 +56,7 @@ async fn collect_feature_gates(client: reqwest::Client) -> Result<Table> {
   to_table(data, names)
 }
 
+/// Convert feature gate date into a table format for display
 fn to_table(fg_data: FeatureGateData, fg_names: FeatureGateNames) -> Result<Table> {
   let k8s_versions = fg_data.keys().map(|v| v.to_string()).collect::<Vec<String>>();
 
@@ -69,7 +75,7 @@ fn to_table(fg_data: FeatureGateData, fg_names: FeatureGateNames) -> Result<Tabl
       let something = fg_data[k8s_version].get(&name);
       match something {
         Some(fg) => {
-          row.push(format!("{} - {}", fg.level, fg.default));
+          row.push(format!("`{}`/`{}`", fg.level, fg.default));
         }
         None => {
           row.push("N/A".to_string());
@@ -79,10 +85,15 @@ fn to_table(fg_data: FeatureGateData, fg_names: FeatureGateNames) -> Result<Tabl
     builder.push_record(row);
   }
 
-  Ok(builder.build())
+  let mut table = builder.build();
+  table.modify(Columns::first(), Width::truncate(MAX_COLUMN_WIDTH).suffix(".."));
+
+  Ok(table)
 }
 
-// MacOs is not supported
+/// Get the download URL for the Kubernetes binary
+///
+/// MacOs/Windows are not supported
 fn get_url(version: &str, binary: &str) -> Result<String> {
   let arch = std::env::consts::ARCH;
   let arch = match arch {
@@ -93,7 +104,6 @@ fn get_url(version: &str, binary: &str) -> Result<String> {
   let os = std::env::consts::OS;
   let os = match os {
     "linux" | "freebsd" | "netbsd" | "openbsd" => "linux",
-    "windows" => "windows",
     _ => bail!("Unsupported OS: {os}"),
   };
 
@@ -124,6 +134,7 @@ async fn download_binary(client: &reqwest::Client, tmp: &TempDir, version: &str,
   Ok(bin)
 }
 
+/// Get the `--help` output (stdout) from the binary provided
 fn get_binary_output(binary: &str) -> Result<String> {
   let proc = std::process::Command::new(binary)
     .args(vec!["--help"])
@@ -173,6 +184,7 @@ struct FeatureGate {
   default: bool,
 }
 
+/// Extract feature gates from the `--help` output of the Kubernetes binary
 fn extract_feature_gates(content: &str) -> Result<(FeatureGates, FeatureGateNames)> {
   static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(.*?)=.*?\((ALPHA|BETA|GA).*default=(true|false)").unwrap());
 
