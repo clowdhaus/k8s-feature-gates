@@ -42,7 +42,8 @@ pub struct Cli {
 
 impl Cli {
   pub async fn write(self, client: reqwest::Client) -> Result<()> {
-    let table = self.collect(client).await?;
+    let mut table = self.collect(client).await?;
+    table.with(tabled::settings::Style::markdown());
 
     tokio::fs::write(self.path, table.to_string()).await?;
 
