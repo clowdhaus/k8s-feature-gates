@@ -2,6 +2,8 @@
 
 Displays feature gates across Kubernetes versions.
 
+See results in the [results](results) directory.
+
 ## ToDo
 
 - [ ] Mark when a feature gate is deprecated and/or removed (i.e. - GA and no longer a gate)

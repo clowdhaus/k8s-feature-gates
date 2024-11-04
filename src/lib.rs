@@ -69,7 +69,7 @@ fn to_table(fg_data: FeatureGateData, fg_names: FeatureGateNames) -> Result<Tabl
       let something = fg_data[k8s_version].get(&name);
       match something {
         Some(fg) => {
-          row.push(format!("`{}`/`{}`", fg.level, fg.default));
+          row.push(format!(r"`{}`\|`{}`", fg.level, fg.default));
         }
         None => {
           row.push("N/A".to_string());

@@ -41,8 +41,8 @@ impl Cli {
 
       table.with(tabled::settings::Style::markdown());
 
-      let path = PathBuf::from(format!(
-        "RESULTS-{}-{}.md",
+      let path = PathBuf::from("results").join(format!(
+        "1.{}-1.{}.md",
         versions.first().unwrap(),
         versions.last().unwrap()
       ));
