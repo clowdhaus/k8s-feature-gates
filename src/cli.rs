@@ -30,25 +30,24 @@ fn get_styles() -> Styles {
 #[command(propagate_version = true)]
 #[command(styles=get_styles())]
 pub struct Cli {
-  /// The path where the collected results are written
-  #[clap(short, long, default_value = "RESULTS.md")]
-  pub path: PathBuf,
-
   #[clap(flatten)]
   pub verbose: Verbosity<InfoLevel>,
 }
 
 impl Cli {
   pub async fn write(self, client: reqwest::Client) -> Result<()> {
-    let mut table = self.collect(client).await?;
+    for versions in [vec![26, 27, 28], vec![29, 30, 31]] {
+      let mut table = crate::collect_feature_gates(client.clone(), versions.to_owned()).await?;
 
-    table.with(tabled::settings::Style::markdown());
-    tokio::fs::write(self.path, table.to_string()).await?;
+      table.with(tabled::settings::Style::markdown());
 
+      let path = PathBuf::from(format!(
+        "RESULTS-{}-{}.md",
+        versions.first().unwrap(),
+        versions.last().unwrap()
+      ));
+      tokio::fs::write(path, table.to_string()).await?;
+    }
     Ok(())
-  }
-
-  async fn collect(&self, client: reqwest::Client) -> Result<tabled::Table> {
-    crate::collect_feature_gates(client).await
   }
 }

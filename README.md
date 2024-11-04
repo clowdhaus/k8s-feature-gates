@@ -1,37 +1,10 @@
 # k8sfg
 
-A CLI to display feature gates across Kubernetes versions.
+Displays feature gates across Kubernetes versions.
 
-## Installation
+## ToDo
 
-[Archives of pre-compiled binaries for `k8sfg` are available for Windows, macOS and Linux.](https://github.com/clowdhaus/k8s-feature-gates/releases)
-
-### Homebrew (macOS and Linux)
-
-```sh
-brew install clowdhaus/taps/k8sfg
-```
-
-### Cargo (rust)
-
-```sh
-cargo install k8sfg
-```
-
-### Source
-
-`k8sfg` is written in Rust, so you'll need to grab a [Rust installation](https://www.rust-lang.org/) in order to compile it.
-`k8sfg` compiles with Rust 1.79.0 (stable) or newer. In general, `k8sfg` tracks the latest stable release of the Rust compiler.
-
-To build `k8sfg`:
-
-```sh
-git clone https://github.com/clowdhaus/k8s-feature-gates
-cd k8sfg
-cargo build --release
-./target/release/k8sfg --version
-0.6.1
-```
+- [ ] Mark when a feature gate is deprecated and/or removed (i.e. - GA and no longer a gate)
 
 ## Local Development
 

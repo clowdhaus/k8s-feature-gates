@@ -6,17 +6,11 @@ use anyhow::{bail, Result};
 pub use cli::Cli;
 use once_cell::sync::Lazy;
 use regex_lite::Regex;
-use tabled::{
-  builder::Builder,
-  settings::{object::Columns, Width},
-  Table,
-};
+use tabled::{builder::Builder, Table};
 use tempfile::{tempdir, TempDir};
 use tokio::io::AsyncWriteExt;
 use tracing::info;
 
-static MAX_COLUMN_WIDTH: usize = 40;
-static K8S_MINOR_VERSIONS: &[i32] = &[27, 28, 29, 30, 31];
 static K8S_BINARIES: &[&str] = &[
   "kube-apiserver",
   "kubelet",
@@ -30,12 +24,12 @@ type FeatureGates = BTreeMap<String, FeatureGate>;
 type FeatureGateNames = BTreeSet<String>;
 type FeatureGateData = BTreeMap<KubernetesVersion, FeatureGates>;
 
-async fn collect_feature_gates(client: reqwest::Client) -> Result<Table> {
+async fn collect_feature_gates(client: reqwest::Client, k8s_minor_versions: Vec<i32>) -> Result<Table> {
   let tmp = tempdir()?;
   let mut data: FeatureGateData = BTreeMap::new();
   let mut names: FeatureGateNames = BTreeSet::new();
 
-  for minor_version in K8S_MINOR_VERSIONS {
+  for minor_version in k8s_minor_versions {
     let full_version = client
       .get(format!("https://cdn.dl.k8s.io/release/stable-1.{minor_version}.txt"))
       .send()
@@ -85,10 +79,7 @@ fn to_table(fg_data: FeatureGateData, fg_names: FeatureGateNames) -> Result<Tabl
     builder.push_record(row);
   }
 
-  let mut table = builder.build();
-  table.modify(Columns::first(), Width::truncate(MAX_COLUMN_WIDTH).suffix(".."));
-
-  Ok(table)
+  Ok(builder.build())
 }
 
 /// Get the download URL for the Kubernetes binary
