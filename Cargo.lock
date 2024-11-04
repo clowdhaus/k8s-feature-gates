@@ -19,9 +19,9 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
 name = "anstream"
-version = "0.6.17"
+version = "0.6.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23a1e53f0f5d86382dafe1cf314783b2044280f406e7e1506368220ad11b1338"
+checksum = "8acc5369981196006228e28809f761875c0327210a891e941f4c683b3a99529b"
 dependencies = [
  "anstyle",
  "anstyle-parse",
@@ -692,16 +692,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "json_to_table"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcde5ffb39ae86f7cc592e50f5ec15d98bbf29cd929502500381add20ab4629e"
-dependencies = [
- "serde_json",
- "tabled",
-]
-
-[[package]]
 name = "k8sfg"
 version = "0.1.0"
 dependencies = [
@@ -709,12 +699,11 @@ dependencies = [
  "anyhow",
  "clap",
  "clap-verbosity-flag",
- "json_to_table",
  "once_cell",
  "regex-lite",
  "reqwest",
  "serde",
- "serde_json",
+ "tabled",
  "tempfile",
  "tokio",
  "tracing",

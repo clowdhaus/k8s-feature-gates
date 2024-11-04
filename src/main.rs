@@ -4,6 +4,8 @@ use k8sfg::Cli;
 use tracing_log::AsTrace;
 use tracing_subscriber::FmtSubscriber;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[tokio::main]
 async fn main() -> Result<()> {
   let cli = Cli::parse();
@@ -13,5 +15,10 @@ async fn main() -> Result<()> {
     .finish();
   tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
-  cli.write().await.map_err(Into::into)
+  let client = reqwest::Client::builder()
+    .user_agent(format!("k8sfg/{VERSION}"))
+    .redirect(reqwest::redirect::Policy::limited(5))
+    .build()?;
+
+  cli.write(client).await.map_err(Into::into)
 }

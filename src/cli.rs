@@ -41,18 +41,15 @@ pub struct Cli {
 }
 
 impl Cli {
-  fn _collect(self) -> Result<()> {
+  pub async fn write(self, client: reqwest::Client) -> Result<()> {
+    let table = self.collect(client).await?;
+
+    tokio::fs::write(self.path, table.to_string()).await?;
+
     Ok(())
   }
 
-  pub async fn write(self) -> Result<()> {
-    let client = reqwest::Client::builder()
-      .user_agent("k8sfg")
-      .redirect(reqwest::redirect::Policy::limited(5))
-      .build()?;
-
-    crate::collect_feature_gates(client).await?;
-
-    Ok(())
+  async fn collect(&self, client: reqwest::Client) -> Result<tabled::Table> {
+    crate::collect_feature_gates(client).await
   }
 }

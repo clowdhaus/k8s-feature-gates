@@ -1,13 +1,12 @@
 pub mod cli;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::{bail, Result};
 pub use cli::Cli;
-use json_to_table::json_to_table;
 use once_cell::sync::Lazy;
 use regex_lite::Regex;
-use serde_json::{json, Value};
+use tabled::{builder::Builder, Table};
 use tempfile::{tempdir, TempDir};
 use tokio::io::AsyncWriteExt;
 use tracing::info;
@@ -22,25 +21,14 @@ static K8S_BINARIES: &[&str] = &[
 ];
 
 type KubernetesVersion = String;
-type FeatureGates = Vec<FeatureGate>;
-type FeatureGateNames = HashSet<String>;
-type FeatureGateData = HashMap<KubernetesVersion, FeatureGates>;
+type FeatureGates = BTreeMap<String, FeatureGate>;
+type FeatureGateNames = BTreeSet<String>;
+type FeatureGateData = BTreeMap<KubernetesVersion, FeatureGates>;
 
-pub async fn display_feature_gates(client: reqwest::Client) -> Result<()> {
-  let (fg_data, fg_names) = collect_feature_gates(client).await?;
-  let results = merge_feature_gates(fg_data, fg_names)?;
-
-  let json = serde_json::to_value(results)?;
-  let table = json_to_table(&json).to_string();
-  println!("{}", table);
-
-  Ok(())
-}
-
-async fn collect_feature_gates(client: reqwest::Client) -> Result<(FeatureGateData, FeatureGateNames)> {
+async fn collect_feature_gates(client: reqwest::Client) -> Result<Table> {
   let tmp = tempdir()?;
-  let mut data: FeatureGateData = HashMap::new();
-  let mut names: FeatureGateNames = HashSet::new();
+  let mut data: FeatureGateData = BTreeMap::new();
+  let mut names: FeatureGateNames = BTreeSet::new();
 
   for minor_version in K8S_MINOR_VERSIONS {
     let full_version = client
@@ -60,27 +48,41 @@ async fn collect_feature_gates(client: reqwest::Client) -> Result<(FeatureGateDa
     }
   }
 
-  Ok((data, names))
+  to_table(data, names)
 }
 
-fn merge_feature_gates(fg_data: FeatureGateData, fg_names: FeatureGateNames) -> Result<Vec<Value>> {
-  let mut results = vec![];
+fn to_table(fg_data: FeatureGateData, fg_names: FeatureGateNames) -> Result<Table> {
+  let k8s_versions = fg_data.keys().map(|v| v.to_string()).collect::<Vec<String>>();
 
-  for name in fg_names {
-    for (k8s_version, feature_gates) in fg_data.iter() {
-      for fg in feature_gates {
-        results.push(json!({
-          "Feature Gate Name": name,
-          k8s_version: format!("{} - {}", fg.level, fg.default),
-        }));
-      }
-    }
+  // Construct table header
+  let mut headers = vec!["Feature Gate".to_string()];
+  for k8s_version in &k8s_versions {
+    headers.push(k8s_version.to_owned());
   }
 
-  Ok(results)
+  let mut builder = Builder::default();
+  builder.push_record(headers);
+
+  for name in fg_names {
+    let mut row = vec![name.to_owned()];
+    for k8s_version in &k8s_versions {
+      let something = fg_data[k8s_version].get(&name);
+      match something {
+        Some(fg) => {
+          row.push(format!("{} - {}", fg.level, fg.default));
+        }
+        None => {
+          row.push("N/A".to_string());
+        }
+      }
+    }
+    builder.push_record(row);
+  }
+
+  Ok(builder.build())
 }
 
-// MacOs is not supported !!!!
+// MacOs is not supported
 fn get_url(version: &str, binary: &str) -> Result<String> {
   let arch = std::env::consts::ARCH;
   let arch = match arch {
@@ -174,16 +176,23 @@ struct FeatureGate {
 fn extract_feature_gates(content: &str) -> Result<(FeatureGates, FeatureGateNames)> {
   static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(.*?)=.*?\((ALPHA|BETA|GA).*default=(true|false)").unwrap());
 
-  let mut gates: Vec<_> = vec![];
+  let mut gates: FeatureGates = BTreeMap::new();
+  let mut names: FeatureGateNames = BTreeSet::new();
   for (_, [name, level, default]) in RE.captures_iter(content).map(|c| c.extract()) {
-    gates.push(FeatureGate {
-      name: name.trim().to_string(),
-      level: level.into(),
-      default: default.parse()?,
-    })
-  }
+    // Starting in 1.31, it appears feature gate names are prepended with `kube:<name>`
+    // We need to remove this to match with prior version feature gate names
+    let name = name.trim().replace("kube:", "").to_string();
+    names.insert(name.clone());
 
-  let names = gates.iter().map(|fg| fg.name.clone()).collect::<HashSet<String>>();
+    gates.insert(
+      name.clone(),
+      FeatureGate {
+        name,
+        level: level.into(),
+        default: default.parse()?,
+      },
+    );
+  }
 
   Ok((gates, names))
 }
