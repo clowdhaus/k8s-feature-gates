@@ -1,10 +1,12 @@
 pub mod cli;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+  collections::{BTreeMap, BTreeSet},
+  sync::LazyLock,
+};
 
 use anyhow::{bail, Result};
 pub use cli::Cli;
-use once_cell::sync::Lazy;
 use regex_lite::Regex;
 use tabled::{builder::Builder, Table};
 use tempfile::{tempdir, TempDir};
@@ -177,7 +179,8 @@ struct FeatureGate {
 
 /// Extract feature gates from the `--help` output of the Kubernetes binary
 fn extract_feature_gates(content: &str) -> Result<(FeatureGates, FeatureGateNames)> {
-  static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(.*?)=.*?\((ALPHA|BETA|GA).*default=(true|false)").unwrap());
+  static RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(.*?)=.*?\((ALPHA|BETA|GA).*default=(true|false)").unwrap());
 
   let mut gates: FeatureGates = BTreeMap::new();
   let mut names: FeatureGateNames = BTreeSet::new();
