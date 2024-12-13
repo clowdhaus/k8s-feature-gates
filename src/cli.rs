@@ -36,7 +36,7 @@ pub struct Cli {
 
 impl Cli {
   pub async fn write(self, client: reqwest::Client) -> Result<()> {
-    for versions in [vec![29, 30, 31]] {
+    for versions in [vec![29, 30, 31], vec![29, 30, 31, 32]] {
       let mut table = crate::collect_feature_gates(client.clone(), versions.to_owned()).await?;
 
       table.with(tabled::settings::Style::markdown());
