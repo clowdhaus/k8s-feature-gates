@@ -22,8 +22,8 @@ regex-lite = "0.1"
 reqwest = { version = "0.12", features = ["stream"] }
 serde = { version = "1.0", features = ["derive"] }
 tabled = { version = "0.18", default-features = false, features = ["std"] }
-tempfile = "3.17"
-tokio = { version = "1.41", default-features = false, features = ["fs", "macros", "rt-multi-thread"] }
+tempfile = "3.18"
+tokio = { version = "1.44", default-features = false, features = ["fs", "macros", "rt-multi-thread"] }
 tracing = { version = "0.1", default-features = false, features = ["log-always"] }
 tracing-log = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "ansi"] }
